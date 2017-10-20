@@ -1,6 +1,7 @@
 package matthbo.game.engine;
 
 import matthbo.game.engine.graphics.Screen;
+import matthbo.game.engine.input.InputHandler;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,8 +19,11 @@ public abstract class Game extends Canvas implements Runnable, GameInterface {
     private Thread thread;
     private JFrame frame;
     private boolean running = false;
+    private boolean fullscreen = false;
 
     private Screen screen;
+    private Dimension size;
+    protected InputHandler input;
 
     private BufferedImage image;
     private int[] pixels;
@@ -31,11 +35,14 @@ public abstract class Game extends Canvas implements Runnable, GameInterface {
         image = new BufferedImage(Game.width, Game.height, BufferedImage.TYPE_INT_RGB);
         pixels = ((DataBufferInt)image.getRaster().getDataBuffer()).getData();
 
-        Dimension size = new Dimension(width, height);
+        size = new Dimension(width, height);
         setPreferredSize(size);
 
         screen =  new Screen(Game.width, Game.height);
         frame = new JFrame();
+        input = new InputHandler();
+
+        addKeyListener(input);
     }
 
     public Game() {
@@ -65,6 +72,7 @@ public abstract class Game extends Canvas implements Runnable, GameInterface {
         double delta = 0;
         int frames = 0;
         int updates = 0;
+        requestFocusInWindow();
         while(running){
             long now = System.nanoTime();
             delta += (now - lastTime) / ns;
@@ -73,6 +81,7 @@ public abstract class Game extends Canvas implements Runnable, GameInterface {
                 update();
                 updates++;
                 delta--;
+                postUpdate();
             }
             render();
             frames++;
@@ -87,11 +96,34 @@ public abstract class Game extends Canvas implements Runnable, GameInterface {
         stop();
     }
 
-    public void clearScreen(){
+    private void postUpdate() {
+        if(input != null) input.clear();
+    }
+
+    protected void fullscreen(){
+        frame.dispose();
+        if(!fullscreen) {
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+            frame.setUndecorated(true);
+
+            fullscreen = true;
+        } else {
+            frame.setExtendedState(JFrame.NORMAL);
+            frame.setUndecorated(false);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+
+            fullscreen = false;
+        }
+        frame.setVisible(true);
+        requestFocusInWindow();
+    }
+
+    protected void clearScreen(){
         screen.clear();
     }
 
-    public void renderScreen(){
+    protected void renderScreen(){
         screen.render();
         System.arraycopy(screen.pixels, 0, pixels, 0, pixels.length);
     }
@@ -100,7 +132,12 @@ public abstract class Game extends Canvas implements Runnable, GameInterface {
         return frame;
     }
 
-    public BufferedImage getImage() {
+    protected BufferedImage getImage() {
         return image;
+    }
+
+    protected void removeDefaultKeyHandler(){
+        removeKeyListener(input);
+        input = null;
     }
 }
