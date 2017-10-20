@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class InputHandler implements KeyListener {
 
-    private KeyEnum[] keys = new KeyEnum[120];
+    private KeyEnum[] keys = new KeyEnum[((1 << 16) - 1)];
 
     public InputHandler(){
         Arrays.fill(keys, KeyEnum.UNTOUCHED);
